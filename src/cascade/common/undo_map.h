@@ -49,7 +49,7 @@ class BaseUndoMap : public Undoable {
     // Iterators:
     typedef typename std::unordered_map<K,V,H,E>::const_iterator const_iterator;
 
-    BaseUndoMap(size_t bs, const H& h, const E& e);
+    BaseUndoMap(std::size_t bs, const H& h, const E& e);
     ~BaseUndoMap() override = default;
 
     // Undoable Interface:
@@ -58,7 +58,7 @@ class BaseUndoMap : public Undoable {
 
     // User Interface:
     bool empty() const;
-    size_t size() const;
+    std::size_t size() const;
     const_iterator insert(K k, V v);
     const_iterator find(K k) const;
     const_iterator begin() const;
@@ -73,7 +73,7 @@ template <typename K, typename V, typename H = std::hash<K>, typename E = std::e
 class UndoMap : public BaseUndoMap<K,V,H,E> {
   public:
     // Constructors:
-    UndoMap(size_t bs = 16, const H& h = H(), const E& e = E());
+    UndoMap(std::size_t bs = 16, const H& h = H(), const E& e = E());
     ~UndoMap() override = default;
 
     // Undoable Interface:
@@ -84,7 +84,7 @@ template <typename K, bool MK, typename V, bool MV, typename H = std::hash<K>, t
 class ManagedUndoMap : public BaseUndoMap<K,V,H,E> {
   public:
     // Constructors:
-    ManagedUndoMap(size_t bs = 16, const H& h = H(), const E& e = E());
+    ManagedUndoMap(std::size_t bs = 16, const H& h = H(), const E& e = E());
     ~ManagedUndoMap() override;
 
     // Undoable Interface:
@@ -92,7 +92,7 @@ class ManagedUndoMap : public BaseUndoMap<K,V,H,E> {
 };
 
 template <typename K, typename V, typename H, typename E>
-inline BaseUndoMap<K,V,H,E>::BaseUndoMap(size_t bs, const H& h, const E& e) : map_(bs,h,e), deltas_(bs,h,e) {
+inline BaseUndoMap<K,V,H,E>::BaseUndoMap(std::size_t bs, const H& h, const E& e) : map_(bs,h,e), deltas_(bs,h,e) {
   // Does nothing.
 }
 
@@ -112,7 +112,7 @@ inline bool BaseUndoMap<K,V,H,E>::empty() const {
 }
 
 template <typename K, typename V, typename H, typename E>
-inline size_t BaseUndoMap<K,V,H,E>::size() const {
+inline std::size_t BaseUndoMap<K,V,H,E>::size() const {
   return map_.size();
 }
 
@@ -140,7 +140,7 @@ inline typename BaseUndoMap<K,V,H,E>::const_iterator BaseUndoMap<K,V,H,E>::end()
 }
 
 template <typename K, typename V, typename H, typename E>
-inline UndoMap<K,V,H,E>::UndoMap(size_t bs, const H& h, const E& e) : BaseUndoMap<K,V,H,E>(bs,h,e) {
+inline UndoMap<K,V,H,E>::UndoMap(std::size_t bs, const H& h, const E& e) : BaseUndoMap<K,V,H,E>(bs,h,e) {
   // Does nothing.
 }
 
@@ -154,7 +154,7 @@ inline void UndoMap<K,V,H,E>::undo() {
 }
 
 template <typename K, bool MK, typename V, bool MV, typename H, typename E>
-inline ManagedUndoMap<K,MK,V,MV,H,E>::ManagedUndoMap(size_t bs, const H& h, const E& e) : BaseUndoMap<K,V,H,E>(bs,h,e) {
+inline ManagedUndoMap<K,MK,V,MV,H,E>::ManagedUndoMap(std::size_t bs, const H& h, const E& e) : BaseUndoMap<K,V,H,E>(bs,h,e) {
   // Does nothing.
 }
 
