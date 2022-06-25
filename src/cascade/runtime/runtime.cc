@@ -71,15 +71,14 @@ Runtime::Runtime() : Thread() {
   pool_.set_num_threads(4);
   pool_.run();
 
-  log_ = new Log();
-  parser_ = new Parser(log_);
+  log_ = std::make_unique<Log>();
+  parser_ = std::make_unique<Parser>(log_.get());
   parser_->set_include_dirs(include_dirs_);
-  compiler_ = new LocalCompiler(this);
-  dp_ = new DataPlane();
-  isolate_ = new Isolate();
+  compiler_ = std::make_unique<LocalCompiler>(this);
+  dp_ = std::make_unique<DataPlane>();
+  isolate_ = std::make_unique<Isolate>();
 
-  program_ = new Program();
-  root_ = nullptr;
+  program_ = std::make_unique<Program>();
   next_id_ = 0;
 
   finished_ = false;
@@ -125,17 +124,6 @@ Runtime::~Runtime() {
   // their alternate callbacks executed. It's now safe to tear down the
   // runtime.
   
-  delete program_;
-  if (root_ != nullptr) {
-    delete root_;
-  }
-
-  delete log_;
-  delete parser_;
-  delete compiler_;
-  delete dp_;
-  delete isolate_;
-
   for (auto& s : streambufs_) {
     if (s.second) {
       delete s.first;
@@ -171,15 +159,15 @@ Runtime& Runtime::set_profile_interval(size_t n) {
 }
 
 DataPlane* Runtime::get_data_plane() {
-  return dp_;
+  return dp_.get();
 }
 
 Compiler* Runtime::get_compiler() {
-  return compiler_;
+  return compiler_.get();
 }
 
 Isolate* Runtime::get_isolate() {
-  return isolate_;
+  return isolate_.get();
 }
 
 Engine::Id Runtime::get_next_id() {
@@ -372,12 +360,11 @@ void Runtime::retarget(const string& s) {
     // Temporarily relocate program_ and root_ so that we can scan the contents
     // of this file using the eval_stream() infrastructure.  Also relocate the
     // parser, as it will skip include guards that it's already seen.
-    auto* march = program_;
-    program_ = new Program();
-    auto* backup_root = root_;
-    root_ = nullptr;
-    auto* backup_parser = parser_;
-    parser_ = new Parser(log_);
+    auto march = std::move(program_);
+    program_ = std::make_unique<Program>();
+    auto backup_root = std::move(root_);
+    auto backup_parser = std::move(parser_);
+    parser_ = std::make_unique<Parser>(log_.get());
 
     // Read the march file
     eval_stream(ifs);
@@ -387,7 +374,6 @@ void Runtime::retarget(const string& s) {
     std::swap(march, program_);
     std::swap(backup_root, root_);
     std::swap(backup_parser, parser_);
-    delete backup_parser;
     item_evals_ = 0;
 
     // Replace attribute annotations for every elaborated module (this includes the
@@ -408,8 +394,6 @@ void Runtime::retarget(const string& s) {
         }   
       }
       if (!found) {
-        delete march;
-        delete backup_root;
         ostream(rdbuf(stderr_)) << "New target does not support modules with standard type " << std1->get_readable_val() << "!" << endl;
         finish(0);
         return;
@@ -417,8 +401,6 @@ void Runtime::retarget(const string& s) {
     }
 
     // Delete temporaries and rebuild the program
-    delete march;
-    delete backup_root;
     root_->rebuild();
   });
 }
@@ -604,7 +586,7 @@ bool Runtime::eval_node(Node* n) {
 }
 
 bool Runtime::eval_decl(ModuleDeclaration* md) {
-  program_->declare(md, log_, parser_);
+  program_->declare(md, log_.get(), parser_.get());
   log_checker_warns();
   if (log_->error()) {
     log_checker_errors();
@@ -619,7 +601,7 @@ bool Runtime::eval_decl(ModuleDeclaration* md) {
 }
 
 bool Runtime::eval_item(ModuleItem* mi) {
-  program_->eval(mi, log_, parser_); 
+  program_->eval(mi, log_.get(), parser_.get());
   log_checker_warns();
   if (log_->error()) {
     log_checker_errors();
@@ -630,7 +612,7 @@ bool Runtime::eval_item(ModuleItem* mi) {
   // Otherwise, count this as an item instantiated within the root.
   const auto* src = program_->root_elab()->second;
   if (src->size_items() == 6) {
-    root_ = new Module(src, this);
+    root_ = std::make_unique<Module>(src, this);
     item_evals_ = 6;
   } else {
     ++item_evals_;

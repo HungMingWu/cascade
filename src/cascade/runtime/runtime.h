@@ -35,6 +35,7 @@
 #include <ctime>
 #include <functional>
 #include <iosfwd>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -183,15 +184,15 @@ class Runtime : public Thread {
     ThreadPool pool_;
 
     // Major Components:
-    Log* log_;
-    Parser* parser_;
-    Compiler* compiler_;
-    DataPlane* dp_;
-    Isolate* isolate_;
+    std::unique_ptr<Log> log_;
+    std::unique_ptr<Parser> parser_;
+    std::unique_ptr<Compiler> compiler_;
+    std::unique_ptr<DataPlane> dp_;
+    std::unique_ptr<Isolate> isolate_;
 
     // Program State:
-    Program* program_;
-    Module* root_;
+    std::unique_ptr<Program> program_;
+    std::unique_ptr<Module> root_;
     Engine::Id next_id_;
 
     // Interrupt Queue:
