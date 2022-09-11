@@ -49,7 +49,7 @@ CoreCompiler& CoreCompiler::set_compiler(Compiler* c) {
   return *this;
 }
 
-Core* CoreCompiler::compile(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+Core* CoreCompiler::compile(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   const auto* delay = md->get_attrs()->get<Number>("__delay");
   if (delay != nullptr) {
     this_thread::sleep_for(chrono::seconds(delay->get_val().to_uint()));
@@ -60,19 +60,19 @@ Core* CoreCompiler::compile(Engine::Id id, ModuleDeclaration* md, Interface* int
 
   const auto* std = md->get_attrs()->get<String>("__std");
   if (std->eq("clock")) {
-    return compile_clock(id, std::unique_ptr<ModuleDeclaration>(md), interface);
+    return compile_clock(id, std::move(md), interface);
   } else if (std->eq("gpio")) {
-    return compile_gpio(id, std::unique_ptr<ModuleDeclaration>(md), interface);
+    return compile_gpio(id, std::move(md), interface);
   } else if (std->eq("led")) {
-    return compile_led(id, std::unique_ptr<ModuleDeclaration>(md), interface);
+    return compile_led(id, std::move(md), interface);
   } else if (std->eq("logic")) {
-    return compile_logic(id, std::unique_ptr<ModuleDeclaration>(md), interface);
+    return compile_logic(id, std::move(md), interface);
   } else if (std->eq("pad")) {
-    return compile_pad(id, std::unique_ptr<ModuleDeclaration>(md), interface);
+    return compile_pad(id, std::move(md), interface);
   } else if (std->eq("reset")) {
-    return compile_reset(id, std::unique_ptr<ModuleDeclaration>(md), interface);
+    return compile_reset(id, std::move(md), interface);
   } else {
-    return compile_custom(id, std::unique_ptr<ModuleDeclaration>(md), interface);
+    return compile_custom(id, std::move(md), interface);
   }
 }
 

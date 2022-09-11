@@ -72,17 +72,15 @@ Engine* Compiler::compile_stub(Engine::Id id, const ModuleDeclaration* md) {
   return new Engine(id, i, new StubCore(i));
 }
 
-Engine* Compiler::compile(Engine::Id id, ModuleDeclaration* md) {
+Engine* Compiler::compile(Engine::Id id, std::unique_ptr<ModuleDeclaration> md) {
   const auto loc = md->get_attrs()->get<String>("__loc")->get_readable_val();
   auto* i = get_interface(loc);
   if (i == nullptr) {
     error("Unable to provide an interface for a module with incompatible __loc annotation");
-    delete md; 
     return nullptr;
   }
 
-  if (StubCheck().check(md)) {
-    delete md;
+  if (StubCheck().check(md.get())) {
     return new Engine(id, i, new StubCore(i));
   }
 
@@ -90,12 +88,11 @@ Engine* Compiler::compile(Engine::Id id, ModuleDeclaration* md) {
   auto* cc = ((loc != "remote") && (loc != "local")) ? get("proxy") : get(target);
   if (cc == nullptr) {
     error("Unable to locate the required core compiler");
-    delete md;
     return nullptr;
   }
 
   ids_.insert(id);
-  auto* c = cc->compile(id, md, i);
+  auto* c = cc->compile(id, std::move(md), i);
   if (c == nullptr) {
     delete i;
     return nullptr;

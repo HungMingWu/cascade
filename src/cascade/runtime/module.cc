@@ -339,10 +339,10 @@ void Module::compile_and_replace(size_t ignore) {
   const auto fid = Resolve().get_readable_full_id(iid);
 
   // Invoke compilations until all jit passes are scheduled
-  compile_and_replace(md, this_version, fid, 1);
+  compile_and_replace(std::unique_ptr<ModuleDeclaration>(md), this_version, fid, 1);
 }
 
-void Module::compile_and_replace(ModuleDeclaration* md, size_t version, const string& id, size_t pass) {
+void Module::compile_and_replace(std::unique_ptr<ModuleDeclaration> md, size_t version, const string& id, size_t pass) {
   // Lookup annotations 
   const auto* std = md->get_attrs()->get<String>("__std");
   const auto* t = md->get_attrs()->get<String>("__target");
@@ -354,9 +354,9 @@ void Module::compile_and_replace(ModuleDeclaration* md, size_t version, const st
   const auto jit = std->eq("logic") && ((tsep != string::npos) || (lsep != string::npos));
 
   // If we're jit compiling, we'll need a second copy of the source.
-  ModuleDeclaration* md2 = nullptr;
+  std::unique_ptr<ModuleDeclaration> md2;
   if (jit) {
-    md2 = md->clone();
+    md2.reset(md->clone());
     if (tsep != string::npos) {
       md2->get_attrs()->set_or_replace("__target", new String(t->get_readable_val().substr(tsep+1)));
       md->get_attrs()->set_or_replace("__target", new String(t->get_readable_val().substr(0, tsep)));
@@ -368,17 +368,15 @@ void Module::compile_and_replace(ModuleDeclaration* md, size_t version, const st
     md->get_attrs()->erase("__delay");
     md->get_attrs()->erase("__state_safe_int");
   } else {
-    md2 = new ModuleDeclaration(new Attributes(), new Identifier("null"));
+    md2 = std::make_unique<ModuleDeclaration>(new Attributes(), new Identifier("null"));
   }
   // Invariant: Initial blocks are removed from pass n compilations
   if (pass > 1) {
-    DeleteInitial().run(md);
+    DeleteInitial().run(md.get());
   }
   // Invariant: First pass for logic must be sw
   if (std->eq("logic") && (pass == 1) && !md->get_attrs()->get<String>("__target")->eq("sw")) {
     rt_->get_compiler()->fatal("Pass 1 compilation for logic must target software!");
-    delete md;
-    delete md2;
     return;
   }
 
@@ -386,7 +384,7 @@ void Module::compile_and_replace(ModuleDeclaration* md, size_t version, const st
   stringstream ss;
   ss << "pass " << pass << " compilation of " << id << " with attributes " << md->get_attrs();
   const auto info = ss.str();
-  auto* e = rt_->get_compiler()->compile(engine_->get_id(), md);
+  auto* e = rt_->get_compiler()->compile(engine_->get_id(), std::move(md));
 
   // Special handling for pass 1 compilation, which isn't run asynchronously
   // and has strict reqiurements on successful completion.
@@ -424,11 +422,9 @@ void Module::compile_and_replace(ModuleDeclaration* md, size_t version, const st
 
   // Run jit compilation asynchronously
   if (jit && !engine_->is_stub() && (e != nullptr)) {
-    rt_->schedule_asynchronous(Runtime::Asynchronous([this, md2, version, id, pass, info]{
-      compile_and_replace(md2, version, id, pass+1);
+    rt_->schedule_asynchronous(Runtime::Asynchronous([&]() {
+      compile_and_replace(std::move(md2), version, id, pass + 1);
     }));
-  } else {
-    delete md2;
   }
 }
 

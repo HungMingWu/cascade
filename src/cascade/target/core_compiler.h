@@ -60,7 +60,7 @@ class CoreCompiler {
     // indicate a failed compilation. This method dispatches control to the
     // protected methods below based on the __std annotation.  Implementations
     // must be thread-safe. 
-    Core* compile(Engine::Id id, ModuleDeclaration* md, Interface* interface);
+    Core* compile(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface);
     // Forces any invocation of compile() associated with id to stop running in
     // a *reasonably short* amount of time. If the compilation would finish, it
     // is safe to return the resulting pointer.  Otherwise, an implementation

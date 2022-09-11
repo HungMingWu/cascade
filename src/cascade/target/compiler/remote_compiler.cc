@@ -320,7 +320,7 @@ void RemoteCompiler::compile(sockstream* sock, const Rpc& rpc) {
     // it's read.  Also, note the unguarded access to sock_index_
     sock_ = socks_[sock_index_[rpc.pid_].second];
     assert(sock_ != nullptr);
-    auto* e = Compiler::compile(eid, md);
+    auto* e = Compiler::compile(eid, std::unique_ptr<ModuleDeclaration>(md));
 
     if (e != nullptr) {
       { lock_guard<mutex> lg(elock_);

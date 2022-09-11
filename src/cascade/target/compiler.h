@@ -69,7 +69,7 @@ class Compiler {
     Engine* compile_stub(Engine::Id id, const ModuleDeclaration* md);
     // Compiles md using the core compiler specified by the __target
     // annotation.  This method takes ownership of md.
-    Engine* compile(Engine::Id id, ModuleDeclaration* md);
+    Engine* compile(Engine::Id id, std::unique_ptr<ModuleDeclaration> md);
     // Causes all invocations of compile() associated with id to return in a
     // *reasonably short* amount of time. If an invocation of compile() would
     // return normally it may do so, otherwise, it will return nullptr.
