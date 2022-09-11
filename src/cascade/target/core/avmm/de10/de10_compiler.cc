@@ -115,77 +115,66 @@ void De10Compiler::stop_compile() {
   sock.get();
 }
 
-De10Gpio* De10Compiler::compile_gpio(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+De10Gpio* De10Compiler::compile_gpio(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
 
   if (virtual_base_ == MAP_FAILED) {
     get_compiler()->error("De10 gpio compilation failed due to inability to memory map device");
-    delete md;
     return nullptr;
   }
-  if (!check_io(md, 8, 8)) {
+  if (!check_io(md.get(), 8, 8)) {
     get_compiler()->error("Unable to compile a de10 gpio with more than 8 outputs");
-    delete md;
     return nullptr;
   }
 
   volatile uint8_t* led_addr = virtual_base_+((ALT_LWFPGALVS_OFST + GPIO_PIO_BASE) & HW_REGS_MASK);
-  if (!ModuleInfo(md).inputs().empty()) {
-    const auto* in = *ModuleInfo(md).inputs().begin();
+  if (!ModuleInfo(md.get()).inputs().empty()) {
+    const auto* in = *ModuleInfo(md.get()).inputs().begin();
     const auto iid = to_vid(in);
-    delete md;
     return new De10Gpio(interface, iid, led_addr);
   } else {
-    delete md;
     return new De10Gpio(interface, nullid(), led_addr);
   }
 }
 
-De10Led* De10Compiler::compile_led(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+De10Led* De10Compiler::compile_led(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
 
   if (virtual_base_ == MAP_FAILED) {
     get_compiler()->error("De10 led compilation failed due to inability to memory map device");
-    delete md;
     return nullptr;
   }
-  if (!check_io(md, 8, 8)) {
+  if (!check_io(md.get(), 8, 8)) {
     get_compiler()->error("Unable to compile a de10 led with more than 8 outputs");
-    delete md;
     return nullptr;
   }
 
   volatile uint8_t* led_addr = virtual_base_+((ALT_LWFPGALVS_OFST + LED_PIO_BASE) & HW_REGS_MASK);
-  if (!ModuleInfo(md).inputs().empty()) {
-    const auto* in = *ModuleInfo(md).inputs().begin();
+  if (!ModuleInfo(md.get()).inputs().empty()) {
+    const auto* in = *ModuleInfo(md.get()).inputs().begin();
     const auto iid = to_vid(in);
-    delete md;
     return new De10Led(interface, iid, led_addr);
   } else {
-    delete md;
     return new De10Led(interface, nullid(), led_addr);
   }
 }
 
-De10Pad* De10Compiler::compile_pad(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+De10Pad* De10Compiler::compile_pad(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
 
   if (virtual_base_ == MAP_FAILED) {
     get_compiler()->error("De10 pad compilation failed due to inability to memory map device");
-    delete md;
     return nullptr;
   }
-  if (!check_io(md, 0, 4)) {
+  if (!check_io(md.get(), 0, 4)) {
     get_compiler()->error("Unable to compile a de10 pad with more than 4 inputs");
-    delete md;
     return nullptr;
   }
 
   volatile uint8_t* pad_addr = virtual_base_+((ALT_LWFPGALVS_OFST + PAD_PIO_BASE) & HW_REGS_MASK);
-  const auto* out = *ModuleInfo(md).outputs().begin();
+  const auto* out = *ModuleInfo(md.get()).outputs().begin();
   const auto oid = to_vid(out);
   const auto w = Evaluate().get_width(out);
-  delete md;
 
   return new De10Pad(interface, oid, w, pad_addr);
 }

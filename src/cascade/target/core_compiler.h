@@ -31,6 +31,7 @@
 #ifndef CASCADE_SRC_TARGET_CORE_COMPILER_H
 #define CASCADE_SRC_TARGET_CORE_COMPILER_H
 
+#include <memory>
 #include <stddef.h>
 #include <string>
 #include "runtime/ids.h"
@@ -79,13 +80,13 @@ class CoreCompiler {
     // nullptr, and report that no implementation strategy is available.  The
     // compile_custom() method is invoked in response to a user-defined __std
     // annotation.
-    virtual Clock* compile_clock(Engine::Id id, ModuleDeclaration* md, Interface* interface);
-    virtual Custom* compile_custom(Engine::Id id, ModuleDeclaration* md, Interface* interface);
-    virtual Gpio* compile_gpio(Engine::Id id, ModuleDeclaration* md, Interface* interface);
-    virtual Led* compile_led(Engine::Id id, ModuleDeclaration* md, Interface* interface);
-    virtual Pad* compile_pad(Engine::Id id, ModuleDeclaration* md, Interface* interface);
-    virtual Reset* compile_reset(Engine::Id id, ModuleDeclaration* md, Interface* interface);
-    virtual Logic* compile_logic(Engine::Id id, ModuleDeclaration* md, Interface* interface);
+    virtual Clock* compile_clock(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface);
+    virtual Custom* compile_custom(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface);
+    virtual Gpio* compile_gpio(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface);
+    virtual Led* compile_led(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface);
+    virtual Pad* compile_pad(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface);
+    virtual Reset* compile_reset(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface);
+    virtual Logic* compile_logic(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface);
 
     // Returns a pointer to this core compiler's enclosing top-level compiler
     Compiler* get_compiler();

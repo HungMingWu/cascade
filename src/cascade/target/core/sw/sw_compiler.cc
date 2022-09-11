@@ -69,53 +69,47 @@ void SwCompiler::stop_compile(Engine::Id id) {
   (void) id;
 }
 
-SwClock* SwCompiler::compile_clock(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+SwClock* SwCompiler::compile_clock(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
 
-  if (!check_io(md, 0, 1)) {
+  if (!check_io(md.get(), 0, 1)) {
     get_compiler()->error("Unable to compile a software clock with more than one output");
-    delete md;
     return nullptr;
   }
 
-  const auto* out = *ModuleInfo(md).outputs().begin();
+  const auto* out = *ModuleInfo(md.get()).outputs().begin();
   const auto oid = to_vid(out);
-  delete md;
 
   return new SwClock(interface, oid);
 }
 
-SwLed* SwCompiler::compile_led(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+SwLed* SwCompiler::compile_led(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
 
   if (led_ == nullptr) {
     get_compiler()->error("Unable to compile a software led without a reference to a software fpga");
-    delete md;
     return nullptr;
   }
-  if (!check_io(md, 8, 8)) {
+  if (!check_io(md.get(), 8, 8)) {
     get_compiler()->error("Unable to compile a software led with more than 8 outputs");
-    delete md;
     return nullptr;
   }
   
-  if (!ModuleInfo(md).inputs().empty()) {
-    const auto* in = *ModuleInfo(md).inputs().begin();
+  if (!ModuleInfo(md.get()).inputs().empty()) {
+    const auto* in = *ModuleInfo(md.get()).inputs().begin();
     const auto iid = to_vid(in);
     const auto w = Evaluate().get_width(in);
-    delete md;
     return new SwLed(interface, iid, w, led_, led_lock_);
   } else {
-    delete md;
     return new SwLed(interface, nullid(), 0, led_, led_lock_);
   }
 }
 
-SwLogic* SwCompiler::compile_logic(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+SwLogic* SwCompiler::compile_logic(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
 
-  ModuleInfo info(md);
-  auto* c = new SwLogic(interface, md);
+  ModuleInfo info(md.get());
+  auto* c = new SwLogic(interface, md.get());
   for (auto* i : info.inputs()) {
     c->set_input(i, to_vid(i));
   }
@@ -128,45 +122,39 @@ SwLogic* SwCompiler::compile_logic(Engine::Id id, ModuleDeclaration* md, Interfa
   return c;
 } 
 
-SwPad* SwCompiler::compile_pad(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+SwPad* SwCompiler::compile_pad(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
 
   if (pad_ == nullptr) {
     get_compiler()->error("Unable to compile a software pad without a reference to a software fpga");
-    delete md;
     return nullptr;
   }
-  if (pad_ == nullptr || !check_io(md, 0, 4)) {
+  if (pad_ == nullptr || !check_io(md.get(), 0, 4)) {
     get_compiler()->error("Unable to compile a software pad with more than four inputs");
-    delete md;
     return nullptr;
   }
 
-  const auto* out = *ModuleInfo(md).outputs().begin();
+  const auto* out = *ModuleInfo(md.get()).outputs().begin();
   const auto oid = to_vid(out);
   const auto w = Evaluate().get_width(out);
-  delete md;
   
   return new SwPad(interface, oid, w, pad_, pad_lock_);
 }
 
-SwReset* SwCompiler::compile_reset(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+SwReset* SwCompiler::compile_reset(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
 
   if (pad_ == nullptr) {
     get_compiler()->error("Unable to compile a software reset without a reference to a software fpga");
-    delete md;
     return nullptr;
   }
-  if (pad_ == nullptr || !check_io(md, 0, 1)) {
+  if (pad_ == nullptr || !check_io(md.get(), 0, 1)) {
     get_compiler()->error("Unable to compile a software reset with more than one input");
-    delete md;
     return nullptr;
   }
 
-  const auto* out = *ModuleInfo(md).outputs().begin();
+  const auto* out = *ModuleInfo(md.get()).outputs().begin();
   const auto oid = to_vid(out);
-  delete md;
 
   return new SwReset(interface, oid, reset_, reset_lock_);
 }

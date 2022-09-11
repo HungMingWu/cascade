@@ -62,9 +62,9 @@ class De10Compiler : public AvmmCompiler<2,12,uint16_t,uint32_t> {
     void stop_compile() override;
 
     // Compiler Interface:
-    De10Gpio* compile_gpio(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
-    De10Led* compile_led(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
-    De10Pad* compile_pad(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
+    De10Gpio* compile_gpio(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
+    De10Led* compile_led(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
+    De10Pad* compile_pad(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
 
     // Compilation Helpers:
     void compile(sockstream* sock, const std::string& text);

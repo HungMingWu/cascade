@@ -60,19 +60,19 @@ Core* CoreCompiler::compile(Engine::Id id, ModuleDeclaration* md, Interface* int
 
   const auto* std = md->get_attrs()->get<String>("__std");
   if (std->eq("clock")) {
-    return compile_clock(id, md, interface);
+    return compile_clock(id, std::unique_ptr<ModuleDeclaration>(md), interface);
   } else if (std->eq("gpio")) {
-    return compile_gpio(id, md, interface);
+    return compile_gpio(id, std::unique_ptr<ModuleDeclaration>(md), interface);
   } else if (std->eq("led")) {
-    return compile_led(id, md, interface);
+    return compile_led(id, std::unique_ptr<ModuleDeclaration>(md), interface);
   } else if (std->eq("logic")) {
-    return compile_logic(id, md, interface);
+    return compile_logic(id, std::unique_ptr<ModuleDeclaration>(md), interface);
   } else if (std->eq("pad")) {
-    return compile_pad(id, md, interface);
+    return compile_pad(id, std::unique_ptr<ModuleDeclaration>(md), interface);
   } else if (std->eq("reset")) {
-    return compile_reset(id, md, interface);
+    return compile_reset(id, std::unique_ptr<ModuleDeclaration>(md), interface);
   } else {
-    return compile_custom(id, md, interface);
+    return compile_custom(id, std::unique_ptr<ModuleDeclaration>(md), interface);
   }
 }
 
@@ -80,15 +80,14 @@ void CoreCompiler::stop_async() {
   // Does nothing.
 }
 
-Clock* CoreCompiler::compile_clock(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+Clock* CoreCompiler::compile_clock(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
   (void) interface;
-  delete md;
   get_compiler()->error("No compiler support available for modules of type clock");
   return nullptr;
 }
 
-Custom* CoreCompiler::compile_custom(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+Custom* CoreCompiler::compile_custom(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
   (void) interface;
 
@@ -96,46 +95,40 @@ Custom* CoreCompiler::compile_custom(Engine::Id id, ModuleDeclaration* md, Inter
   assert(std != nullptr);
   get_compiler()->error("No compiler support available for custom modules of type " + std->get_readable_val());
 
-  delete md;
   return nullptr;
 }
 
-Gpio* CoreCompiler::compile_gpio(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+Gpio* CoreCompiler::compile_gpio(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
   (void) interface;
-  delete md;
   get_compiler()->error("No compiler support available for modules of type gpio");
   return nullptr;
 }
 
-Led* CoreCompiler::compile_led(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+Led* CoreCompiler::compile_led(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
   (void) interface;
-  delete md;
   get_compiler()->error("No compiler support available for modules of type led");
   return nullptr;
 }
 
-Pad* CoreCompiler::compile_pad(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+Pad* CoreCompiler::compile_pad(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
   (void) interface;
-  delete md;
   get_compiler()->error("No compiler support available for modules of type pad");
   return nullptr;
 }
 
-Reset* CoreCompiler::compile_reset(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+Reset* CoreCompiler::compile_reset(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
   (void) interface;
-  delete md;
   get_compiler()->error("No compiler support available for modules of type reset");
   return nullptr;
 }
 
-Logic* CoreCompiler::compile_logic(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+Logic* CoreCompiler::compile_logic(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   (void) id;
   (void) interface;
-  delete md;
   get_compiler()->error("No compiler support available for modules of type logic");
   return nullptr;
 } 

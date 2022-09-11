@@ -100,7 +100,7 @@ class AvmmCompiler : public CoreCompiler {
     std::vector<Slot> slots_;
 
     // Core Compiler Interface:
-    AvmmLogic<V,A,T>* compile_logic(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
+    AvmmLogic<V,A,T>* compile_logic(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
 
     // Slot Management Helpers:
     int get_free() const;
@@ -160,9 +160,9 @@ inline void AvmmCompiler<M,V,A,T>::stop_compile(Engine::Id id) {
 }
 
 template <size_t M, size_t V, typename A, typename T>
-inline AvmmLogic<V,A,T>* AvmmCompiler<M,V,A,T>::compile_logic(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+inline AvmmLogic<V,A,T>* AvmmCompiler<M,V,A,T>::compile_logic(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   std::unique_lock<std::mutex> lg(lock_);
-  ModuleInfo info(md);
+  ModuleInfo info(md.get());
 
   // Check for unsupported language features
   auto unsupported = false;
@@ -177,7 +177,6 @@ inline AvmmLogic<V,A,T>* AvmmCompiler<M,V,A,T>::compile_logic(Engine::Id id, Mod
     unsupported = true;
   }
   if (unsupported) {
-    delete md;
     return nullptr;
   }
 
@@ -185,7 +184,6 @@ inline AvmmLogic<V,A,T>* AvmmCompiler<M,V,A,T>::compile_logic(Engine::Id id, Mod
   const auto slot = get_free();
   if (slot == -1) {
     get_compiler()->error("No remaining slots available on Avmm device");
-    delete md;
     return nullptr;
   }
   
@@ -193,7 +191,7 @@ inline AvmmLogic<V,A,T>* AvmmCompiler<M,V,A,T>::compile_logic(Engine::Id id, Mod
   // lexicographically to ensure a deterministic variable table ordering. The
   // final invocation of index_tasks is lexicographic by construction, as it's
   // based on a recursive descent of the AST.
-  auto* al = build(interface, md, slot);
+  auto* al = build(interface, md.get(), slot);
   std::map<VId, const Identifier*> is;
   for (auto* i : info.inputs()) {
     is.insert(std::make_pair(to_vid(i), i));
@@ -241,7 +239,7 @@ inline AvmmLogic<V,A,T>* AvmmCompiler<M,V,A,T>::compile_logic(Engine::Id id, Mod
   // This slot is now the compile lead
   slots_[slot].id = id;
   slots_[slot].state = State::COMPILING;
-  slots_[slot].text = Rewrite<M,V,A,T>().run(md, slot, al->get_table(), al->open_loop_clock());
+  slots_[slot].text = Rewrite<M,V,A,T>().run(md.get(), slot, al->get_table(), al->open_loop_clock());
   // Enter into compilation state machine. Control will exit from this loop
   // either when compilation succeeds or is aborted.
   while (true) {

@@ -64,19 +64,19 @@ class ProxyCompiler : public CoreCompiler {
 
     // Core Compiler Interface:
     void stop_async() override;
-    Clock* compile_clock(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
-    Custom* compile_custom(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
-    Gpio* compile_gpio(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
-    Led* compile_led(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
-    Pad* compile_pad(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
-    Reset* compile_reset(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
-    Logic* compile_logic(Engine::Id id, ModuleDeclaration* md, Interface* interface) override;
+    Clock* compile_clock(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
+    Custom* compile_custom(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
+    Gpio* compile_gpio(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
+    Led* compile_led(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
+    Pad* compile_pad(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
+    Reset* compile_reset(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
+    Logic* compile_logic(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) override;
 
     // Generic compilation method. In terms of implementation, proxy cores are
     // mostly all the same. This method is here simply for the sake of
     // type-correctness.
     template <typename T>
-    ProxyCore<T>* generic_compile(Engine::Id id, ModuleDeclaration* md, Interface* interface);
+    ProxyCore<T>* generic_compile(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface);
 
     void async_loop(sockstream* sock);
     void stop_compile(Engine::Id id) override;
@@ -90,12 +90,11 @@ class ProxyCompiler : public CoreCompiler {
 };
 
 template <typename T>
-inline ProxyCore<T>* ProxyCompiler::generic_compile(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
+inline ProxyCore<T>* ProxyCompiler::generic_compile(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
   // Open a connection to this location if necessary.
   const auto& loc = md->get_attrs()->get<String>("__loc")->get_readable_val();
   if (!open(loc)) {
     get_compiler()->error("Unable to establish connection with remote compiler");
-    delete md;
     return nullptr;
   }
   const auto& conn = conns_[loc];
@@ -105,14 +104,12 @@ inline ProxyCore<T>* ProxyCompiler::generic_compile(Engine::Id id, ModuleDeclara
   auto* sock = get_sock(loc);
   if (sock == nullptr) {
     get_compiler()->error("Unable to establish connection with remote compiler");
-    delete md;
     return nullptr;
   }
 
   // Send a blocking compile request
   Rpc(Rpc::Type::COMPILE, conn.pid, id, 0).serialize(*sock);
-  *sock << md << "\n";
-  delete md;
+  *sock << md.get() << "\n";
   sock->flush();
 
   // If successful, this response will contain the index for this engine in the

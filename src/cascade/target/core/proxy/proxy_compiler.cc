@@ -59,32 +59,32 @@ void ProxyCompiler::stop_async() {
   pool_.stop_now();
 }
 
-Clock* ProxyCompiler::compile_clock(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
-  return generic_compile<Clock>(id, md, interface);
+Clock* ProxyCompiler::compile_clock(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
+  return generic_compile<Clock>(id, std::move(md), interface);
 }
 
-Custom* ProxyCompiler::compile_custom(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
-  return generic_compile<Custom>(id, md, interface);
+Custom* ProxyCompiler::compile_custom(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
+  return generic_compile<Custom>(id, std::move(md), interface);
 }
 
-Gpio* ProxyCompiler::compile_gpio(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
-  return generic_compile<Gpio>(id, md, interface);
+Gpio* ProxyCompiler::compile_gpio(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
+  return generic_compile<Gpio>(id, std::move(md), interface);
 }
 
-Led* ProxyCompiler::compile_led(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
-  return generic_compile<Led>(id, md, interface);
+Led* ProxyCompiler::compile_led(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
+  return generic_compile<Led>(id, std::move(md), interface);
 }
 
-Logic* ProxyCompiler::compile_logic(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
-  return generic_compile<Logic>(id, md, interface);
+Logic* ProxyCompiler::compile_logic(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
+  return generic_compile<Logic>(id, std::move(md), interface);
 }
 
-Pad* ProxyCompiler::compile_pad(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
-  return generic_compile<Pad>(id, md, interface);
+Pad* ProxyCompiler::compile_pad(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
+  return generic_compile<Pad>(id, std::move(md), interface);
 }
 
-Reset* ProxyCompiler::compile_reset(Engine::Id id, ModuleDeclaration* md, Interface* interface) {
-  return generic_compile<Reset>(id, md, interface);
+Reset* ProxyCompiler::compile_reset(Engine::Id id, std::unique_ptr<ModuleDeclaration> md, Interface* interface) {
+  return generic_compile<Reset>(id, std::move(md), interface);
 }
 
 void ProxyCompiler::async_loop(sockstream* sock) {
