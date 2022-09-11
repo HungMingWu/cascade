@@ -46,8 +46,8 @@ class Engine {
     typedef uint32_t Id;
 
     // Constructors:
-    Engine(Id id, Interface* i, Core* c);
-    ~Engine();
+    Engine(Id id, std::unique_ptr<Interface> i, std::unique_ptr<Core> c);
+    ~Engine() = default;
 
     // Query Interface:
     bool is_clock() const;
@@ -91,29 +91,14 @@ class Engine {
 
   private:
     Id id_;
-    Interface* i_;
-    Core* c_;
+    std::unique_ptr<Interface> i_;
+    std::unique_ptr<Core> c_;
 
-    bool there_are_reads_;
+    bool there_are_reads_ = false;
 };
 
-inline Engine::Engine(Id id, Interface* i, Core* c) {
-  assert(i != nullptr);
-  assert(c != nullptr);
-  id_ = id;
-  i_ = i;
-  c_ = c;
-  there_are_reads_ = false;
-}
-
-inline Engine::~Engine() {
-  if (c_ != nullptr) {
-    delete c_;
-  }
-  if (i_ != nullptr) {
-    delete i_;
-  }
-}
+inline Engine::Engine(Id id, std::unique_ptr<Interface> i, std::unique_ptr<Core> c) 
+: id_(id), i_(std::move(i)), c_(std::move(c)) {}
 
 inline bool Engine::is_clock() const {
   return c_->is_clock();
@@ -211,19 +196,19 @@ inline void Engine::finalize() {
 }
 
 inline VId Engine::get_clock_id() const {
-  auto* c = dynamic_cast<sw::SwClock*>(c_);
+  auto* c = dynamic_cast<sw::SwClock*>(c_.get());
   assert(c != nullptr);
   return c->get_id();
 }
 
 inline bool Engine::get_clock_val() {
-  auto* c = dynamic_cast<sw::SwClock*>(c_);
+  auto* c = dynamic_cast<sw::SwClock*>(c_.get());
   assert(c != nullptr);
   return c->get_val();
 }
 
 inline void Engine::set_clock_val(bool v) {
-  auto* c = dynamic_cast<sw::SwClock*>(c_);
+  auto* c = dynamic_cast<sw::SwClock*>(c_.get());
   assert(c != nullptr);
   c->set_val(v);
 }
@@ -238,18 +223,12 @@ inline void Engine::replace_with(Engine* e) {
   delete i;
   e->c_->finalize();
 
-  // Now that we're done with our core and interface, delete them.
-  delete c_;
-  delete i_;
-
   // Move the internal state from the new engine into this one
-  c_ = e->c_;
-  i_ = e->i_;
+  c_ = std::move(e->c_);
+  i_ = std::move(e->i_);
   there_are_reads_ = e->there_are_reads_;
 
   // Delete the shell which is left over
-  e->i_ = nullptr;
-  e->c_ = nullptr;
   delete e;
 }
 

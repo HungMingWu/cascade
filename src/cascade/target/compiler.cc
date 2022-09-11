@@ -69,7 +69,7 @@ Engine* Compiler::compile_stub(Engine::Id id, const ModuleDeclaration* md) {
   const auto loc = md->get_attrs()->get<String>("__loc")->get_readable_val();
   auto* i = get_interface(loc);
   assert(i != nullptr);
-  return new Engine(id, i, new StubCore(i));
+  return new Engine(id, std::unique_ptr<Interface>(i), std::make_unique<StubCore>(i));
 }
 
 Engine* Compiler::compile(Engine::Id id, std::unique_ptr<ModuleDeclaration> md) {
@@ -81,7 +81,7 @@ Engine* Compiler::compile(Engine::Id id, std::unique_ptr<ModuleDeclaration> md) 
   }
 
   if (StubCheck().check(md.get())) {
-    return new Engine(id, i, new StubCore(i));
+    return new Engine(id, std::unique_ptr<Interface>(i), std::make_unique<StubCore>(i));
   }
 
   const auto target = md->get_attrs()->get<String>("__target")->get_readable_val();
@@ -98,7 +98,7 @@ Engine* Compiler::compile(Engine::Id id, std::unique_ptr<ModuleDeclaration> md) 
     return nullptr;
   }
 
-  return new Engine(id, i, c);
+  return new Engine(id, std::unique_ptr<Interface>(i), std::unique_ptr<Core>(c));
 }
 
 void Compiler::stop_compile(Engine::Id id) {
